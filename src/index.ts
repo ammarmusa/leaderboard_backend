@@ -7,13 +7,22 @@ import {
 import { initializeWorker } from "./workers/job.worker";
 import dotenv from "dotenv";
 import mysql from "mysql2/promise"; // Import mysql2/promise
+import userRoutes from "./routes/userRoutes";
+import { User } from "./models/User";
+import { requestLogger } from "./middleware/requestLogger";
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.APP_PORT || process.env.PORT || 3000;
 
 app.use(express.json());
+
+// Add request logging middleware
+app.use(requestLogger);
+
+// User routes
+app.use("/api/users", userRoutes);
 
 // Main endpoint
 app.get("/", (req, res) => {
@@ -51,10 +60,13 @@ const startServer = async () => {
   // 2. Initialize the state for change detection
   await initializeState();
 
-  // 3. Start the BullMQ worker
+  // 3. Create default superadmin user
+  await User.createDefaultSuperadmin();
+
+  // 4. Start the BullMQ worker
   initializeWorker();
 
-  // 4. Start watching for database changes
+  // 5. Start watching for database changes
   watchJobChanges();
 
   app.listen(PORT, () => {
