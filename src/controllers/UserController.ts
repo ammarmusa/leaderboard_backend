@@ -43,14 +43,19 @@ export class UserController {
         { expiresIn: "24h" }
       );
 
-      res.status(200).json({
+      res.cookie("token", token, {
+        httpOnly: true,
+        sameSite: "lax", // "none" + secure:true if frontend/backend are different origins
+        secure: false, // true in production (HTTPS)
+        maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+      });
+
+      res.json({
         success: true,
         message: "Login successful",
-        data: {
-          user: user,
-          token: token,
-        },
+        data: { user: user }, // **do NOT include the token here anymore**
       });
+      return;
     } catch (error) {
       console.error("Error during login:", error);
       res.status(500).json({
